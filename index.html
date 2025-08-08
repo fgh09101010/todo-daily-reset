@@ -1,106 +1,537 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>每日必做清單</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>待辦清單 - 專業版</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    body { font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 1em; }
-    h1 { text-align: center; }
-    ul { list-style: none; padding: 0; }
-    li { padding: 0.5em 0; border-bottom: 1px solid #ddd; display: flex; align-items: center; }
-    input[type="checkbox"] { margin-right: 1em; }
-    #new-task { margin-top: 1em; }
-    button { margin-left: 0.5em; }
+    /* RESET & 基礎 */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #e0e7ff 0%, #f5f7fa 100%);
+      color: #1f2a44;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 32px 16px;
+      user-select: none;
+      overflow-x: hidden;
+    }
+
+    /* 容器 */
+    #app-container {
+      width: 100%;
+      max-width: 540px;
+      background: #ffffff;
+      border-radius: 24px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      padding: 32px;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    #app-container:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+    }
+
+    h2 {
+      font-weight: 700;
+      font-size: 2rem;
+      letter-spacing: 0.5px;
+      text-align: center;
+      color: #1e3a8a;
+      margin-bottom: 28px;
+      user-select: text;
+    }
+
+    /* 按鈕通用 */
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 1rem;
+      padding: 14px 20px;
+      background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%);
+      color: #fff;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+    button:hover {
+      background: linear-gradient(90deg, #2563eb 0%, #1e40af 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+    }
+    button:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+    }
+    button:disabled {
+      cursor: not-allowed;
+      background: #93c5fd;
+      box-shadow: none;
+      color: #e5e7eb;
+    }
+    button::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      transition: width 0.3s ease, height 0.3s ease;
+    }
+    button:active::after {
+      width: 200px;
+      height: 200px;
+    }
+
+    /* 輸入框 */
+    input[type="email"],
+    input[type="password"],
+    input[type="text"] {
+      font-size: 1rem;
+      padding: 16px 20px;
+      border-radius: 12px;
+      border: 2px solid #e5e7eb;
+      margin-bottom: 20px;
+      transition: all 0.3s ease;
+      outline: none;
+      font-weight: 500;
+      width: 100%;
+      background: #f9fafb;
+    }
+    input:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+      background: #fff;
+    }
+
+    /* 區塊 */
+    #auth-section, #todo-section {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* 待辦清單 */
+    ul#todoList {
+      list-style: none;
+      padding: 0;
+      margin: 16px 0 0;
+      max-height: 460px;
+      overflow-y: auto;
+      border-radius: 16px;
+      background: #f9fafb;
+      box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+    ul#todoList::-webkit-scrollbar {
+      width: 8px;
+    }
+    ul#todoList::-webkit-scrollbar-thumb {
+      background-color: #3b82f6;
+      border-radius: 4px;
+    }
+
+    /* 單一待辦項目 */
+    ul#todoList > li {
+      display: flex;
+      align-items: center;
+      padding: 16px 20px;
+      border-bottom: 1px solid #e5e7eb;
+      background: #fff;
+      transition: all 0.2s ease;
+    }
+    ul#todoList > li:last-child {
+      border-bottom: none;
+    }
+    ul#todoList > li.dragging {
+      opacity: 0.7;
+      box-shadow: 0 0 12px rgba(59, 130, 246, 0.5);
+      background: #eff6ff;
+      transform: scale(1.02);
+    }
+    ul#todoList > li.dragover {
+      border: 2px dashed #3b82f6;
+      background: #dbeafe;
+    }
+
+    ul#todoList > li input[type="checkbox"] {
+      width: 24px;
+      height: 24px;
+      cursor: pointer;
+      accent-color: #3b82f6;
+      margin-right: 12px;
+    }
+
+    ul#todoList > li span {
+      flex-grow: 1;
+      font-size: 1.1rem;
+      color: #1f2a44;
+      user-select: text;
+    }
+    ul#todoList > li span.checked {
+      text-decoration: line-through;
+      color: #6b7280;
+      font-style: italic;
+    }
+
+    ul#todoList > li button {
+      background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
+      padding: 8px 16px;
+      font-size: 0.9rem;
+      box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+    }
+    ul#todoList > li button:hover {
+      background: linear-gradient(90deg, #dc2626 0%, #b91c1c 100%);
+    }
+
+    /* 載入動畫 */
+    .spinner {
+      display: none;
+      width: 24px;
+      height: 24px;
+      border: 3px solid #3b82f6;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 20px auto;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* 通知訊息 */
+    #toast {
+      position: fixed;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1f2a44;
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      opacity: 0;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    #toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(-10px);
+    }
+
+    /* 響應式設計 */
+    @media (max-width: 480px) {
+      #app-container {
+        max-width: 100%;
+        border-radius: 0;
+        box-shadow: none;
+        padding: 24px 16px;
+      }
+      h2 {
+        font-size: 1.6rem;
+        margin-bottom: 20px;
+      }
+      ul#todoList > li {
+        padding: 12px 16px;
+      }
+      ul#todoList > li button {
+        padding: 6px 12px;
+        font-size: 0.85rem;
+      }
+      input[type="email"],
+      input[type="password"],
+      input[type="text"] {
+        padding: 12px 16px;
+        margin-bottom: 16px;
+      }
+      button {
+        padding: 12px 16px;
+        font-size: 0.95rem;
+      }
+    }
   </style>
 </head>
 <body>
-  <h1>每日必做清單</h1>
-  <ul id="task-list"></ul>
-
-  <div id="new-task">
-    <input type="text" id="task-input" placeholder="新增任務..." />
-    <button id="add-btn">新增</button>
+  <div id="app-container">
+    <h2>待辦清單</h2>
+    <div id="auth-section">
+      <input id="email" type="email" placeholder="電子郵件" autocomplete="username" aria-label="輸入電子郵件" />
+      <input id="password" type="password" placeholder="密碼" autocomplete="current-password" aria-label="輸入密碼" />
+      <button id="registerBtn" aria-label="註冊">註冊</button>
+      <button id="loginBtn" aria-label="登入">登入</button>
+    </div>
+    <div id="todo-section" style="display:none;">
+      <button id="logoutBtn" aria-label="登出">登出</button>
+      <input id="newTodo" type="text" placeholder="輸入待辦事項" aria-label="輸入待辦事項" />
+      <button id="addBtn" aria-label="新增待辦事項">新增</button>
+      <ul id="todoList" role="list" aria-live="polite" aria-label="待辦清單"></ul>
+      <div class="spinner" id="spinner"></div>
+    </div>
   </div>
+  <div id="toast" aria-live="polite"></div>
 
-  <script>
-    const TASKS_JSON_URL = 'https://raw.githubusercontent.com/fgh09101010/todo-daily-reset/main/tasks.json';
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import {
+      getAuth,
+      createUserWithEmailAndPassword,
+      signInWithEmailAndPassword,
+      signOut,
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+    import {
+      getDatabase,
+      ref,
+      set,
+      get,
+      update,
+      remove,
+      onValue
+    } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
 
-    const STORAGE_KEY_PREFIX = 'completed_';
+    const firebaseConfig = {
+      apiKey: "AIzaSyD9BfFoLaToKMNDFBp3HidXEpUopB4Zuec",
+      authDomain: "todo-daily-reset.firebaseapp.com",
+      databaseURL: "https://todo-daily-reset-default-rtdb.firebaseio.com",
+      projectId: "todo-daily-reset",
+      storageBucket: "todo-daily-reset.firebasestorage.app",
+      messagingSenderId: "1028236709059",
+      appId: "1:1028236709059:web:4dd5e8806183226400e676",
+      measurementId: "G-778N7SBFKC"
+    };
 
-    let tasks = [];
-    const todayStr = new Date().toISOString().slice(0, 10);
-    const storageKey = STORAGE_KEY_PREFIX + todayStr;
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
 
-    // 從 localStorage 讀今日完成狀態
-    let completedStatus = JSON.parse(localStorage.getItem(storageKey) || '{}');
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    const registerBtn = document.getElementById('registerBtn');
+    const loginBtn = document.getElementById('loginBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const authSection = document.getElementById('auth-section');
+    const todoSection = document.getElementById('todo-section');
+    const newTodoInput = document.getElementById('newTodo');
+    const addBtn = document.getElementById('addBtn');
+    const todoList = document.getElementById('todoList');
+    const spinner = document.getElementById('spinner');
+    const toast = document.getElementById('toast');
 
-    // 載入任務清單
-    async function loadTasks() {
-      try {
-        const res = await fetch(TASKS_JSON_URL + '?cache=' + Date.now()); // 防快取
-        tasks = await res.json();
-        renderTasks();
-      } catch (e) {
-        alert('讀取任務失敗，請確認 tasks.json 是否存在');
-        console.error(e);
-      }
+    let todosData = [];
+
+    function showToast(message, duration = 3000) {
+      toast.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), duration);
     }
 
-    // 渲染任務清單
-    function renderTasks() {
-      const ul = document.getElementById('task-list');
-      ul.innerHTML = '';
-
-      tasks.forEach(task => {
-        const li = document.createElement('li');
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.checked = completedStatus[task.id] || false;
-        checkbox.addEventListener('change', () => {
-          completedStatus[task.id] = checkbox.checked;
-          localStorage.setItem(storageKey, JSON.stringify(completedStatus));
-        });
-
-        const span = document.createElement('span');
-        span.textContent = task.content;
-
-        li.appendChild(checkbox);
-        li.appendChild(span);
-
-        ul.appendChild(li);
+    function toggleLoading(show) {
+      spinner.style.display = show ? 'block' : 'none';
+      [registerBtn, loginBtn, logoutBtn, addBtn].forEach(btn => {
+        btn.disabled = show;
       });
     }
 
-    // 新增任務（僅前端顯示，無法直接改 JSON 檔，需後端支持）
-    document.getElementById('add-btn').addEventListener('click', () => {
-      const input = document.getElementById('task-input');
-      const content = input.value.trim();
-      if (!content) {
-        alert('請輸入任務內容');
-        return;
-      }
-      // 產生新的 ID，ID 用 max ID +1
-      const newId = tasks.length ? Math.max(...tasks.map(t => t.id)) + 1 : 1;
-      const newTask = {
-        id: newId,
-        content,
-        created_at: todayStr,
-        completed: false
-      };
-      tasks.push(newTask);
-      completedStatus[newId] = false;
-      localStorage.setItem(storageKey, JSON.stringify(completedStatus));
-      renderTasks();
-      input.value = '';
-
-      alert('新增任務只會暫存在此裝置，若想讓任務長期保存，需要更新 tasks.json 或後端支援');
+    registerBtn.addEventListener('click', () => {
+      toggleLoading(true);
+      createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value)
+        .then(() => showToast('註冊成功，請登入'))
+        .catch(err => showToast('註冊失敗: ' + err.message))
+        .finally(() => toggleLoading(false));
     });
 
-    // 每天凌晨自動清除前一天的完成狀態（靠 LocalStorage 的 key 不同就自然清空）
+    loginBtn.addEventListener('click', () => {
+      toggleLoading(true);
+      signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value)
+        .then(() => showToast('登入成功'))
+        .catch(err => showToast('登入失敗: ' + err.message))
+        .finally(() => toggleLoading(false));
+    });
 
-    // 初始化載入
-    loadTasks();
+    logoutBtn.addEventListener('click', () => {
+      toggleLoading(true);
+      signOut(auth)
+        .then(() => showToast('已登出'))
+        .finally(() => toggleLoading(false));
+    });
+
+    onAuthStateChanged(auth, (user) => {
+      toggleLoading(true);
+      if (user) {
+        authSection.style.display = 'none';
+        todoSection.style.display = 'flex';
+        loadTodos(user.uid);
+        resetIfNewDay(user.uid);
+      } else {
+        authSection.style.display = 'flex';
+        todoSection.style.display = 'none';
+        todoList.innerHTML = '';
+      }
+      toggleLoading(false);
+    });
+
+    addBtn.addEventListener('click', () => {
+      const title = newTodoInput.value.trim();
+      if (!title) return showToast('請輸入待辦事項');
+      toggleLoading(true);
+      addTodo(title);
+      newTodoInput.value = '';
+    });
+
+    function addTodo(title) {
+      const uid = auth.currentUser.uid;
+      const id = Date.now().toString();
+      const order = todosData.length ? Math.max(...todosData.map(t => t.order ?? 0)) + 1 : 0;
+      set(ref(db, `todos/${uid}/${id}`), {
+        title,
+        checked: false,
+        order
+      }).then(() => showToast('待辦事項已新增')).finally(() => toggleLoading(false));
+    }
+
+    function loadTodos(uid) {
+      toggleLoading(true);
+      onValue(ref(db, `todos/${uid}`), snapshot => {
+        todosData = [];
+        snapshot.forEach(child => {
+          const val = child.val();
+          todosData.push({ key: child.key, ...val });
+        });
+        todosData.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+        renderTodos();
+        toggleLoading(false);
+      });
+    }
+
+    function renderTodos() {
+      todoList.innerHTML = '';
+      todosData.forEach(item => {
+        const li = document.createElement('li');
+        li.draggable = true;
+        li.dataset.key = item.key;
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = !!item.checked;
+        checkbox.addEventListener('change', () => {
+          toggleLoading(true);
+          toggleChecked(item.key, checkbox.checked);
+        });
+
+        const span = document.createElement('span');
+        span.textContent = item.title;
+        if (item.checked) span.classList.add('checked');
+
+        const delBtn = document.createElement('button');
+        delBtn.textContent = '刪除';
+        delBtn.addEventListener('click', () => {
+          toggleLoading(true);
+          deleteTodo(item.key);
+        });
+
+        li.appendChild(checkbox);
+        li.appendChild(span);
+        li.appendChild(delBtn);
+
+        li.addEventListener('dragstart', dragStart);
+        li.addEventListener('dragover', dragOver);
+        li.addEventListener('drop', drop);
+        li.addEventListener('dragenter', dragEnter);
+        li.addEventListener('dragleave', dragLeave);
+
+        todoList.appendChild(li);
+      });
+    }
+
+    function toggleChecked(key, checked) {
+      const uid = auth.currentUser.uid;
+      update(ref(db, `todos/${uid}/${key}`), { checked })
+        .then(() => showToast(checked ? '已標記完成' : '已取消標記'))
+        .finally(() => toggleLoading(false));
+    }
+
+    function deleteTodo(key) {
+      const uid = auth.currentUser.uid;
+      remove(ref(db, `todos/${uid}/${key}`))
+        .then(() => showToast('待辦事項已刪除'))
+        .finally(() => toggleLoading(false));
+    }
+
+    let draggedKey = null;
+
+    function dragStart(e) {
+      draggedKey = e.currentTarget.dataset.key;
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', draggedKey);
+      e.currentTarget.classList.add('dragging');
+    }
+    function dragOver(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      e.currentTarget.classList.add('dragover');
+    }
+    function dragEnter(e) {
+      e.currentTarget.classList.add('dragover');
+    }
+    function dragLeave(e) {
+      e.currentTarget.classList.remove('dragover');
+    }
+    function drop(e) {
+      e.preventDefault();
+      e.currentTarget.classList.remove('dragover');
+      const targetKey = e.currentTarget.dataset.key;
+      if (draggedKey === targetKey) return;
+
+      toggleLoading(true);
+      const draggedIndex = todosData.findIndex(t => t.key === draggedKey);
+      const targetIndex = todosData.findIndex(t => t.key === targetKey);
+
+      const draggedItem = todosData.splice(draggedIndex, 1)[0];
+      todosData.splice(targetIndex, 0, draggedItem);
+
+      todosData.forEach((item, idx) => {
+        item.order = idx;
+        const uid = auth.currentUser.uid;
+        update(ref(db, `todos/${uid}/${item.key}`), { order: idx });
+      });
+
+      renderTodos();
+      showToast('待辦順序已更新');
+      toggleLoading(false);
+    }
+
+    function resetIfNewDay(uid) {
+      const lastResetKey = 'lastReset_' + uid;
+      const today = new Date().toLocaleDateString('zh-TW', { timeZone: 'Asia/Taipei' });
+      const lastReset = localStorage.getItem(lastResetKey);
+      if (lastReset !== today) {
+        toggleLoading(true);
+        get(ref(db, `todos/${uid}`)).then(snapshot => {
+          snapshot.forEach(child => {
+            update(ref(db, `todos/${uid}/${child.key}`), { checked: false });
+          });
+          showToast('待辦清單已重置');
+        }).finally(() => {
+          localStorage.setItem(lastResetKey, today);
+          toggleLoading(false);
+        });
+      }
+    }
   </script>
 </body>
 </html>
