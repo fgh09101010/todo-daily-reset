@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>每日必做清單</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 1em; }
+    h1 { text-align: center; }
+    ul { list-style: none; padding: 0; }
+    li { padding: 0.5em 0; border-bottom: 1px solid #ddd; display: flex; align-items: center; }
+    input[type="checkbox"] { margin-right: 1em; }
+    #new-task { margin-top: 1em; }
+    button { margin-left: 0.5em; }
+  </style>
+</head>
+<body>
+  <h1>每日必做清單</h1>
+  <ul id="task-list"></ul>
+
+  <div id="new-task">
+    <input type="text" id="task-input" placeholder="新增任務..." />
+    <button id="add-btn">新增</button>
+  </div>
+
+  <script>
+    const TASKS_JSON_URL = 'tasks.json';
+    const STORAGE_KEY_PREFIX = 'completed_';
+
+    let tasks = [];
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const storageKey = STORAGE_KEY_PREFIX + todayStr;
+
+    // 從 localStorage 讀今日完成狀態
+    let completedStatus = JSON.parse(localStorage.getItem(storageKey) || '{}');
+
+    // 載入任務清單
+    async function loadTasks() {
+      try {
+        const res = await fetch(TASKS_JSON_URL + '?cache=' + Date.now()); // 防快取
+        tasks = await res.json();
+        renderTasks();
+      } catch (e) {
+        alert('讀取任務失敗，請確認 tasks.json 是否存在');
+        console.error(e);
+      }
+    }
+
+    // 渲染任務清單
+    function renderTasks() {
+      const ul = document.getElementById('task-list');
+      ul.innerHTML = '';
+
+      tasks.forEach(task => {
+        const li = document.createElement('li');
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = completedStatus[task.id] || false;
+        checkbox.addEventListener('change', () => {
+          completedStatus[task.id] = checkbox.checked;
+          localStorage.setItem(storageKey, JSON.stringify(completedStatus));
+        });
+
+        const span = document.createElement('span');
+        span.textContent = task.content;
+
+        li.appendChild(checkbox);
+        li.appendChild(span);
+
+        ul.appendChild(li);
+      });
+    }
+
+    // 新增任務（僅前端顯示，無法直接改 JSON 檔，需後端支持）
+    document.getElementById('add-btn').addEventListener('click', () => {
+      const input = document.getElementById('task-input');
+      const content = input.value.trim();
+      if (!content) {
+        alert('請輸入任務內容');
+        return;
+      }
+      // 產生新的 ID，ID 用 max ID +1
+      const newId = tasks.length ? Math.max(...tasks.map(t => t.id)) + 1 : 1;
+      const newTask = {
+        id: newId,
+        content,
+        created_at: todayStr,
+        completed: false
+      };
+      tasks.push(newTask);
+      completedStatus[newId] = false;
+      localStorage.setItem(storageKey, JSON.stringify(completedStatus));
+      renderTasks();
+      input.value = '';
+
+      alert('新增任務只會暫存在此裝置，若想讓任務長期保存，需要更新 tasks.json 或後端支援');
+    });
+
+    // 每天凌晨自動清除前一天的完成狀態（靠 LocalStorage 的 key 不同就自然清空）
+
+    // 初始化載入
+    loadTasks();
+  </script>
+</body>
+</html>
