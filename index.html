@@ -66,12 +66,11 @@
 <body>
   <div id="navbar"></div>
   <script>
-      const basePath = window.location.pathname.split('/').length === 2 ? '' : '../';
-      fetch(basePath + 'navbar.html')
-        .then(res => res.text())
-        .then(data => {
-          document.getElementById('navbar').innerHTML = data;
-        });
+    fetch('navbar.html')
+      .then(res => res.text())
+      .then(data => {
+        document.getElementById('navbar').innerHTML = data;
+      });
   </script>
   <main>
     <p>歡迎來到首頁</p>
