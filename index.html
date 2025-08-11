@@ -65,13 +65,14 @@
 </head>
 <body>
   <div id="navbar"></div>
-  <script>
-    fetch('navbar.html')
-      .then(res => res.text())
-      .then(data => {
-        document.getElementById('navbar').innerHTML = data;
-      });
-  </script>
+<script>
+  fetch('/todo-daily-reset/navbar.html')
+    .then(res => res.text())
+    .then(data => {
+      document.getElementById('navbar').innerHTML = data;
+    });
+</script>
+
   <main>
     <p>歡迎來到首頁</p>
   </main>
